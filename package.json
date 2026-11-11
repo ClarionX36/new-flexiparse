@@ -1,0 +1,38 @@
+{
+  "name": "flexiparse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI document extraction SaaS for cPanel shared hosting",
+  "main": "app.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "worker": "node queue/cronWorker.js",
+    "test": "node --test",
+    "check": "node --check app.js && node --check config/db.js && node --check config/passport.js && node --check config/gemini.js && node --check controllers/authController.js && node --check controllers/parseController.js && node --check controllers/userController.js && node --check controllers/webhookController.js && node --check middleware/authMiddleware.js && node --check middleware/recaptcha.js && node --check middleware/upload.js && node --check queue/cronWorker.js && node --check queue/processor.js && node --check routes/auth.js && node --check routes/api.js && node --check routes/webhooks.js && node --check public/app.js && node --check utils/plans.js && node --check utils/tabular.js"
+  },
+  "overrides": {
+    "mysql2": "^3.24.6",
+    "uuid": "^11.1.1"
+  },
+  "dependencies": {
+    "@google/genai": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-mysql-session": "^3.0.3",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "helmet": "^8.0.0",
+    "multer": "^2.0.2",
+    "mysql2": "^3.24.6",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pdf-lib": "^1.17.1",
+    "stripe": "^18.2.1"
+  },
+  "devDependencies": {}
+}
