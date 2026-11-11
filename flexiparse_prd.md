@@ -11,7 +11,7 @@
 - **AI Engine:** `@google/genai` (Gemini API - Model: `gemini-1.5-flash`).
 - **Authentication:** Google OAuth 2.0 (`passport-google-oauth20` or official SDK).
 - **Security:** Google reCAPTCHA v2/v3, CORS, Helmet, Rate Limiter.
-- **Financial Gateway (External):** Stripe / Paddle (Off-server processing, synced to cPanel via Webhooks).
+- **Financial Gateway (External):** Lemon Squeezy (Merchant of Record; off-server checkout with entitlements synced to cPanel via webhooks).
 - **UI & Frontend:** HTML5, Tailwind CSS (via CDN or pre-compiled), Alpine.js / Vanilla JS (for interactive table preview).
 
 ---
@@ -141,7 +141,7 @@ flexiparse/
 │   ├── authController.js # Handles Google Login & Logout
 │   ├── parseController.js# Upload, Gemini processing, table save
 │   ├── userController.js # Dashboard, referrals, payouts
-│   └── webhookController.js # Stripe/Paddle webhooks
+│   └── webhookController.js # Lemon Squeezy webhooks
 ├── middleware/
 │   ├── authMiddleware.js # Session & auth checks
 │   ├── quotaMiddleware.js# Checks page quota & table limits
@@ -174,8 +174,8 @@ Use these exact prompts in VS Code Copilot to generate your code modules smoothl
 ### Prompt 2: Gemini OCR Controller (`controllers/parseController.js`)
 > "Create an Express controller that accepts an uploaded file (PDF/Image) using multer. Send the document file to the Gemini API (`@google/genai` model `gemini-1.5-flash`) with a prompt asking Gemini to extract all tabular data into JSON format with headers and rows. Return the extracted JSON to the frontend for interactive editing."
 
-### Prompt 3: Webhook Handler (`controllers/webhookController.js`)
-> "Write a Stripe webhook endpoint in Express that listens to `checkout.session.completed`. If `metadata.type` is 'subscription', update the user's `plan_tier` and set `monthly_quota_remaining` based on the plan ($9=300, $19=1000, $49=3500). If `metadata.type` is 'topup', add the topup quota to `add_on_quota_remaining` only if user plan is not 'free'."
+### Prompt 3: Lemon Squeezy Webhook Handler (`controllers/webhookController.js`)
+> "Write a Lemon Squeezy webhook endpoint in Express. Verify the raw request body's HMAC-SHA256 signature from `X-Signature`, then process `order_created` using configured variant IDs and `meta.custom_data.user_id`. Activate subscriptions and monthly quota only for paid orders; grant top-up pages only to active paid subscribers. Handle subscription updates and expiration, and make all order processing idempotent."
 
 ### Prompt 4: Queue & Cleanup Cron (`queue/cronWorker.js`)
 > "Write a Node.js cron job script using `node-cron`. The first cron job checks the `extraction_queue` table every 1 minute and processes pending documents according to user tier interval. The second cron job runs daily to search the `./uploads` directory and delete files older than 24 hours."
@@ -195,7 +195,9 @@ Use these exact prompts in VS Code Copilot to generate your code modules smoothl
    - `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`
    - `GEMINI_API_KEY`
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-   - `STRIPE_WEBHOOK_SECRET`
+   - `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_WEBHOOK_SECRET`
+   - `LEMONSQUEEZY_VARIANT_STARTER`, `LEMONSQUEEZY_VARIANT_PRO`, `LEMONSQUEEZY_VARIANT_SCALE`
+   - `LEMONSQUEEZY_VARIANT_TOPUP_500`, `LEMONSQUEEZY_VARIANT_TOPUP_1500`
 4. **Run npm install:** Click **Run npm install** in the cPanel Node.js App interface or run it via cPanel Terminal.
 5. **Setup Cron Job:**
    - Go to **cPanel > Cron Jobs**.

@@ -257,7 +257,7 @@ async function initApp() {
     $('#app-shell').classList.remove('hidden');
     await refreshDashboard();
     const params = new URLSearchParams(location.search);
-    if (params.get('payment') === 'success') showNotice('Pembayaran diterima. Paket akan diperbarui setelah Stripe mengonfirmasi transaksi.', 'info');
+    if (params.get('payment') === 'success') showNotice('Pembayaran diterima. Paket diperbarui setelah Lemon Squeezy mengonfirmasi transaksi.', 'info');
     if (params.get('payment') === 'cancelled') showNotice('Pembayaran dibatalkan.', 'info');
   }
 }

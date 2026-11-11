@@ -6,6 +6,7 @@ const { verifyRecaptcha } = require('../middleware/recaptcha');
 const { upload, verifyFileSignature } = require('../middleware/upload');
 const parse = require('../controllers/parseController');
 const users = require('../controllers/userController');
+const { createCheckout, getProductByVariantId, getVariantId } = require('../config/lemonsqueezy');
 
 const router = express.Router();
 const extractionLimiter = rateLimit({
@@ -45,40 +46,35 @@ router.post('/payouts', requireAuth, requireCsrf, users.requestPayout);
 
 router.post('/checkout', requireAuth, requireCsrf, async (req, res, next) => {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Pembayaran belum dikonfigurasi.' });
-    if (!process.env.APP_URL) return res.status(503).json({ error: 'APP_URL belum dikonfigurasi untuk Stripe Checkout.' });
-    const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const { type, plan, pages } = req.body;
-    let priceId;
-    let metadata;
+    let product;
     if (type === 'subscription' && ['starter', 'pro', 'scale'].includes(plan)) {
       if (req.user.subscription_status === 'active' && req.user.plan_tier !== 'free') {
         return res.status(409).json({ error: 'Anda sudah memiliki paket berbayar aktif. Hubungi dukungan untuk mengubah paket agar tidak membuat langganan ganda.' });
       }
-      priceId = process.env[`STRIPE_PRICE_${plan.toUpperCase()}`];
-      metadata = { type, plan, userId: String(req.user.id) };
+      product = plan;
     } else if (type === 'topup' && [500, 1500].includes(Number(pages))) {
       if (!['starter', 'pro', 'scale'].includes(req.user.plan_tier) || req.user.subscription_status !== 'active') {
         return res.status(403).json({ error: 'Top-up hanya tersedia untuk pelanggan berbayar aktif.' });
       }
-      priceId = process.env[`STRIPE_PRICE_TOPUP_${Number(pages)}`];
-      metadata = { type, pages: String(pages), userId: String(req.user.id) };
+      product = `topup${Number(pages)}`;
     } else {
       return res.status(400).json({ error: 'Produk pembayaran tidak valid.' });
     }
-    if (!priceId) return res.status(503).json({ error: 'Price ID Stripe untuk produk ini belum dikonfigurasi.' });
-    const session = await stripe.checkout.sessions.create({
-      mode: type === 'subscription' ? 'subscription' : 'payment',
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.APP_URL}/dashboard?payment=success`,
-      cancel_url: `${process.env.APP_URL}/dashboard?payment=cancelled`,
-      client_reference_id: String(req.user.id),
-      customer_email: req.user.email,
-      metadata,
-      subscription_data: type === 'subscription' ? { metadata } : undefined
+    const variantId = getVariantId(product);
+    if (!variantId || getProductByVariantId(variantId) !== product) {
+      return res.status(503).json({ error: `Varian Lemon Squeezy untuk ${product} belum dikonfigurasi dengan unik.` });
+    }
+    const url = await createCheckout({
+      variantId,
+      email: req.user.email,
+      name: req.user.name,
+      userId: req.user.id,
+      type,
+      plan: type === 'subscription' ? plan : undefined,
+      pages: type === 'topup' ? Number(pages) : undefined
     });
-    return res.json({ url: session.url });
+    return res.json({ url });
   } catch (error) {
     return next(error);
   }
