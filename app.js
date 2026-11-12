@@ -72,7 +72,7 @@ app.use('/api', rateLimit({
   limit: 300,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  message: { error: 'Terlalu banyak permintaan. Silakan coba beberapa saat lagi.' }
+  message: { error: 'Too many requests. Please try again shortly.' }
 }));
 
 app.use('/auth', require('./routes/auth'));
@@ -90,14 +90,14 @@ app.get('/health', async (req, res, next) => {
     return next(error);
   }
 });
-app.use((req, res) => res.status(404).json({ error: 'Halaman tidak ditemukan.' }));
+app.use((req, res) => res.status(404).json({ error: 'Page not found.' }));
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
-  if (error.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `Ukuran file melebihi batas ${process.env.MAX_UPLOAD_MB || 15} MB.` });
-  if (error.message?.startsWith('File harus')) return res.status(400).json({ error: error.message });
+  if (error.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `File size exceeds the ${process.env.MAX_UPLOAD_MB || 15} MB limit.` });
+  if (error.message?.startsWith('Files must be')) return res.status(400).json({ error: error.message });
   const status = Number(error.status) || 500;
   if (status >= 500) console.error('[FlexiParse]', error);
-  return res.status(status).json({ error: status >= 500 ? 'Terjadi kesalahan server. Silakan coba lagi.' : error.message });
+  return res.status(status).json({ error: status >= 500 ? 'A server error occurred. Please try again.' : error.message });
 });
 
 if (require.main === module) {

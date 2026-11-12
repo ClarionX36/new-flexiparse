@@ -5,20 +5,20 @@ const { getProductByVariantId, verifyWebhookSignature } = require('../config/lem
 function lemonSqueezyWebhook(req, res, next) {
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
   if (!secret || !process.env.LEMONSQUEEZY_STORE_ID) {
-    return res.status(503).send('Lemon Squeezy webhook belum dikonfigurasi.');
+    return res.status(503).send('Lemon Squeezy webhook is not configured.');
   }
   if (secret.length < 6 || secret.length > 40) {
-    return res.status(503).send('Panjang signing secret Lemon Squeezy harus 6–40 karakter.');
+    return res.status(503).send('The Lemon Squeezy signing secret must be 6–40 characters long.');
   }
   if (!verifyWebhookSignature(req.body, req.get('x-signature'), secret)) {
-    return res.status(401).send('Webhook signature tidak valid.');
+    return res.status(401).send('Invalid webhook signature.');
   }
 
   let payload;
   try {
     payload = JSON.parse(req.body.toString('utf8'));
   } catch (error) {
-    return res.status(400).send('Webhook payload tidak valid.');
+    return res.status(400).send('Invalid webhook payload.');
   }
   const eventName = req.get('x-event-name') || payload.meta?.event_name;
   processEvent(eventName, payload).then(() => res.json({ received: true })).catch(next);

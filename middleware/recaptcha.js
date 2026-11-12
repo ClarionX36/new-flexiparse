@@ -1,7 +1,7 @@
 async function verifyRecaptcha(req, res, next) {
   if (!process.env.RECAPTCHA_SECRET_KEY) return next();
   const token = req.get('x-recaptcha-token');
-  if (!token) return res.status(400).json({ error: 'Verifikasi reCAPTCHA diperlukan.' });
+  if (!token) return res.status(400).json({ error: 'reCAPTCHA verification is required.' });
 
   try {
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
@@ -14,7 +14,7 @@ async function verifyRecaptcha(req, res, next) {
     if (!result.success || result.action !== 'extract' ||
       (expectedHost && result.hostname?.toLowerCase() !== expectedHost) ||
       (typeof result.score === 'number' && result.score < 0.5)) {
-      return res.status(403).json({ error: 'Verifikasi reCAPTCHA gagal.' });
+      return res.status(403).json({ error: 'reCAPTCHA verification failed.' });
     }
     return next();
   } catch (error) {

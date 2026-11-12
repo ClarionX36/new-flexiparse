@@ -12,11 +12,11 @@ async function getPageCount(file) {
   try {
     const pdf = await PDFDocument.load(file.buffer, { ignoreEncryption: true });
     const pages = Math.max(pdf.getPageCount(), 1);
-    if (pages > 100) throw Object.assign(new Error('PDF terlalu panjang. Batas maksimum adalah 100 halaman per file.'), { status: 413 });
+    if (pages > 100) throw Object.assign(new Error('PDF is too long. The maximum is 100 pages per file.'), { status: 413 });
     return pages;
   } catch (error) {
     if (error.status) throw error;
-    throw Object.assign(new Error('PDF tidak dapat dibaca. Pastikan file tidak rusak atau terkunci.'), { status: 400 });
+    throw Object.assign(new Error('Could not read the PDF. Make sure the file is not corrupted or locked.'), { status: 400 });
   }
 }
 
@@ -27,15 +27,15 @@ async function checkQuota(req, res, next) {
       [req.user.id]
     );
     const user = rows[0];
-    if (!user) return res.status(401).json({ error: 'Sesi pengguna tidak lagi aktif. Silakan masuk kembali.' });
+    if (!user) return res.status(401).json({ error: 'Your session is no longer active. Please sign in again.' });
     const plan = user?.subscription_status === 'active' ? user.plan_tier : 'free';
     const limits = planLimits[plan] || planLimits.free;
     const [countRows] = await db.execute('SELECT COUNT(*) AS count FROM parsed_tables WHERE user_id = ?', [req.user.id]);
     if (Number(countRows[0].count) >= limits.tables) {
-      return res.status(403).json({ error: `Paket ${plan} hanya dapat menyimpan ${limits.tables} tabel. Hapus tabel lama atau upgrade paket.` });
+      return res.status(403).json({ error: `The ${plan} plan can save up to ${limits.tables} tables. Delete an existing table or upgrade your plan.` });
     }
     if (Number(user.monthly_quota_remaining) + Number(user.add_on_quota_remaining) < req.filePages) {
-      return res.status(403).json({ error: `Kuota tidak cukup untuk ${req.filePages} halaman. Sisa kuota: ${Number(user.monthly_quota_remaining) + Number(user.add_on_quota_remaining)} halaman.` });
+      return res.status(403).json({ error: `Not enough quota for ${req.filePages} pages. Remaining quota: ${Number(user.monthly_quota_remaining) + Number(user.add_on_quota_remaining)} pages.` });
     }
     return next();
   } catch (error) {
@@ -51,7 +51,7 @@ async function enqueueExtraction(req, res, next) {
       [req.user.id]
     );
     const user = users[0];
-    if (!user) return res.status(401).json({ error: 'Sesi pengguna tidak lagi aktif. Silakan masuk kembali.' });
+    if (!user) return res.status(401).json({ error: 'Your session is no longer active. Please sign in again.' });
     const plan = user.subscription_status === 'active' ? user.plan_tier : 'free';
     const delayMinutes = (planLimits[plan] || planLimits.free).queueMinutes;
     const extension = {
@@ -102,7 +102,7 @@ async function getExtractionStatus(req, res, next) {
       'SELECT id, status, error_message AS errorMessage, parsed_table_id AS tableId, scheduled_at AS scheduledAt FROM extraction_queue WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Job ekstraksi tidak ditemukan.' });
+    if (!rows[0]) return res.status(404).json({ error: 'Extraction job not found.' });
     return res.json({ job: rows[0] });
   } catch (error) {
     return next(error);
@@ -127,7 +127,7 @@ async function getTable(req, res, next) {
       'SELECT id, title, original_filename AS originalFilename, total_pages AS totalPages, parsed_json AS parsedJson FROM parsed_tables WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Tabel tidak ditemukan.' });
+    if (!rows[0]) return res.status(404).json({ error: 'Table not found.' });
     return res.json({ table: { ...rows[0], result: JSON.parse(rows[0].parsedJson) } });
   } catch (error) {
     return next(error);
@@ -138,14 +138,14 @@ async function updateTable(req, res, next) {
   try {
     const { title, result } = req.body;
     if (typeof title !== 'string' || !result || !Array.isArray(result.headers) || !Array.isArray(result.rows)) {
-      return res.status(400).json({ error: 'Data tabel tidak valid.' });
+      return res.status(400).json({ error: 'Invalid table data.' });
     }
     const normalized = parseResult(JSON.stringify(result));
     const [update] = await db.execute(
       'UPDATE parsed_tables SET title = ?, parsed_json = ? WHERE id = ? AND user_id = ?',
-      [title.trim().slice(0, 255) || 'Hasil ekstraksi', JSON.stringify(normalized), req.params.id, req.user.id]
+      [title.trim().slice(0, 255) || 'Extraction results', JSON.stringify(normalized), req.params.id, req.user.id]
     );
-    if (!update.affectedRows) return res.status(404).json({ error: 'Tabel tidak ditemukan.' });
+    if (!update.affectedRows) return res.status(404).json({ error: 'Table not found.' });
     return res.json({ ok: true });
   } catch (error) {
     return next(error);
@@ -155,7 +155,7 @@ async function updateTable(req, res, next) {
 async function deleteTable(req, res, next) {
   try {
     const [deleted] = await db.execute('DELETE FROM parsed_tables WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
-    if (!deleted.affectedRows) return res.status(404).json({ error: 'Tabel tidak ditemukan.' });
+    if (!deleted.affectedRows) return res.status(404).json({ error: 'Table not found.' });
     return res.json({ ok: true });
   } catch (error) {
     return next(error);
@@ -165,7 +165,7 @@ async function deleteTable(req, res, next) {
 async function exportTable(req, res, next) {
   try {
     const [rows] = await db.execute('SELECT title, parsed_json FROM parsed_tables WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
-    if (!rows[0]) return res.status(404).json({ error: 'Tabel tidak ditemukan.' });
+    if (!rows[0]) return res.status(404).json({ error: 'Table not found.' });
     const result = JSON.parse(rows[0].parsed_json);
     const filename = String(rows[0].title).replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-|-$/g, '') || 'flexiparse';
     if (req.query.format === 'xlsx') {

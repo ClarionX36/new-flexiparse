@@ -1,0 +1,485 @@
+:root {
+  color-scheme: dark;
+  --ink: #edf0fb;
+  --muted: #a0a8bd;
+  --line: #30364a;
+  --purple: #9a8bff;
+  --purple-dark: #8171f2;
+  --pale: #211f38;
+  --night: #0b1020;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --ink: #13192a;
+  --muted: #6d7487;
+  --line: #e7e9ef;
+  --purple: #6854dc;
+  --purple-dark: #5040c3;
+  --pale: #f5f4ff;
+  --night: #0b1020;
+}
+
+body {
+  color: var(--ink);
+  background: #0d1222;
+}
+
+.app-shell {
+  background: #0d1222;
+}
+
+.workspace-preview {
+  background: #12182a;
+}
+
+.bottom-cta {
+  background: #17172a;
+  border-color: #2b2944;
+}
+
+.page-glow {
+  opacity: .8;
+}
+
+.topbar,
+footer {
+  border-color: #262c3e;
+}
+
+.brand,
+.nav-links a,
+.text-link,
+.button-quiet,
+.button-outline {
+  color: var(--ink);
+}
+
+.nav-links a,
+.text-link {
+  color: #b0b7ca;
+}
+
+.button-quiet,
+.button-outline,
+.doc-card,
+.extract-card,
+.step-card,
+.dashboard-mock,
+.plan-card,
+.app-sidebar,
+.stat-card,
+.saved-table,
+.loading-state,
+.empty-state,
+.referral-card,
+.modal-card {
+  background: #171d2e;
+  border-color: #2b3246;
+}
+
+.step-featured,
+.mock-sidebar,
+.mock-head,
+.mock-progress,
+.mini-table .mini-head,
+.editable-table th {
+  background: #20243a;
+}
+
+.doc-top,
+.paper-total,
+.mini-table,
+.mini-table > div,
+.app-header,
+.mock-stats > div,
+.mock-document,
+.reward-options label,
+.affiliate-balance,
+.modal-header,
+.editable-table th,
+.editable-table td {
+  border-color: #30364a;
+}
+
+.paper-label,
+.paper-total,
+.mini-table > div,
+.step-card p,
+.section-heading p,
+.preview-copy > p,
+.plan-card > p,
+.plan-card li,
+.welcome-row p,
+.section-row p,
+.upload-panel p,
+.saved-detail small,
+.referral-card > p,
+.stat-foot,
+.proof small,
+.trust-strip > span,
+.trust-strip > div,
+footer > span,
+footer > a:last-child,
+.doc-top small,
+.extract-head small,
+.editor-toolbar,
+.affiliate-balance small {
+  color: #a0a8bd;
+}
+
+.paper-line,
+.paper-row i {
+  background: #2b3246;
+}
+
+.doc-icon,
+.upload-icon,
+.sparkle-icon {
+  background: #292544;
+}
+
+.proof-avatars span {
+  border-color: #0d1222;
+}
+
+.step-file,
+.ai-status,
+.mock-main,
+.payout-form input,
+.payout-form select,
+.referral-link-box,
+.editable-table th,
+.editable-table td {
+  color: var(--ink);
+  background: #111728;
+}
+
+.mock-sidebar {
+  background: #111728;
+}
+
+.referral-link-box {
+  background: #111728;
+  border-color: #30364a;
+}
+
+.referral-link-box code {
+  color: #b0b7ca;
+}
+
+.file-type {
+  background: #3a282d;
+  color: #ffaaa4;
+}
+
+.file-type.green {
+  background: #16352f;
+  color: #7ddbb7;
+}
+
+.icon-button:hover,
+.side-link.active {
+  background: #292544;
+}
+
+.side-link {
+  color: #a0a8bd;
+}
+
+.mock-nav.active {
+  background: #25223c;
+}
+
+.mock-user {
+  background: #302c50;
+  color: #c1b6ff;
+}
+
+.mock-stats > div {
+  border-color: #30364a;
+}
+
+.mock-document {
+  border-color: #30364a;
+}
+
+.mock-progress {
+  background: #30364a;
+}
+
+.upload-panel {
+  background: #171a2c;
+  border-color: #45405f;
+}
+
+.button-dark {
+  background: #292f43;
+}
+
+.notice.success {
+  background: #16352f;
+  color: #7ddbb7;
+}
+
+.notice.error {
+  background: #3a2328;
+  color: #ffaaa4;
+}
+
+.notice.info {
+  background: #262342;
+  color: #c1b6ff;
+}
+
+.table-status {
+  color: #7ddbb7;
+}
+
+.toast {
+  background: #252c40;
+}
+
+.toast.toast-error {
+  background: #873e44;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle {
+  white-space: nowrap;
+}
+
+html[data-theme="light"] body {
+  background: #fff;
+}
+
+html[data-theme="light"] .app-shell {
+  background: #f8f9fc;
+}
+
+html[data-theme="light"] .workspace-preview {
+  background: #f8f8fc;
+}
+
+html[data-theme="light"] .bottom-cta {
+  background: #f8f7ff;
+  border-color: #f0effb;
+}
+
+html[data-theme="light"] .topbar,
+html[data-theme="light"] footer {
+  border-color: rgba(230, 232, 241, .62);
+}
+
+html[data-theme="light"] .brand {
+  color: #13192a;
+}
+
+html[data-theme="light"] .nav-links a,
+html[data-theme="light"] .text-link {
+  color: #555d72;
+}
+
+html[data-theme="light"] .button-quiet,
+html[data-theme="light"] .button-outline,
+html[data-theme="light"] .doc-card,
+html[data-theme="light"] .extract-card,
+html[data-theme="light"] .step-card,
+html[data-theme="light"] .dashboard-mock,
+html[data-theme="light"] .plan-card,
+html[data-theme="light"] .app-sidebar,
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .saved-table,
+html[data-theme="light"] .loading-state,
+html[data-theme="light"] .empty-state,
+html[data-theme="light"] .referral-card,
+html[data-theme="light"] .modal-card {
+  background: #fff;
+  border-color: #e7e9ef;
+}
+
+html[data-theme="light"] .step-featured,
+html[data-theme="light"] .mock-sidebar,
+html[data-theme="light"] .mock-head,
+html[data-theme="light"] .mock-progress,
+html[data-theme="light"] .mini-table .mini-head,
+html[data-theme="light"] .editable-table th {
+  background: #f5f4ff;
+}
+
+html[data-theme="light"] .doc-top,
+html[data-theme="light"] .paper-total,
+html[data-theme="light"] .mini-table,
+html[data-theme="light"] .mini-table > div,
+html[data-theme="light"] .app-header,
+html[data-theme="light"] .mock-stats > div,
+html[data-theme="light"] .mock-document,
+html[data-theme="light"] .reward-options label,
+html[data-theme="light"] .affiliate-balance,
+html[data-theme="light"] .modal-header,
+html[data-theme="light"] .editable-table th,
+html[data-theme="light"] .editable-table td {
+  border-color: #e7e9ef;
+}
+
+html[data-theme="light"] .paper-label,
+html[data-theme="light"] .paper-total,
+html[data-theme="light"] .mini-table > div,
+html[data-theme="light"] .step-card p,
+html[data-theme="light"] .section-heading p,
+html[data-theme="light"] .preview-copy > p,
+html[data-theme="light"] .plan-card > p,
+html[data-theme="light"] .plan-card li,
+html[data-theme="light"] .welcome-row p,
+html[data-theme="light"] .section-row p,
+html[data-theme="light"] .upload-panel p,
+html[data-theme="light"] .saved-detail small,
+html[data-theme="light"] .referral-card > p,
+html[data-theme="light"] .stat-foot,
+html[data-theme="light"] .proof small,
+html[data-theme="light"] .trust-strip > span,
+html[data-theme="light"] .trust-strip > div,
+html[data-theme="light"] footer > span,
+html[data-theme="light"] footer > a:last-child,
+html[data-theme="light"] .doc-top small,
+html[data-theme="light"] .extract-head small,
+html[data-theme="light"] .editor-toolbar,
+html[data-theme="light"] .affiliate-balance small {
+  color: #6d7487;
+}
+
+html[data-theme="light"] .paper-line,
+html[data-theme="light"] .paper-row i {
+  background: #f0f1f5;
+}
+
+html[data-theme="light"] .doc-icon,
+html[data-theme="light"] .upload-icon,
+html[data-theme="light"] .sparkle-icon {
+  background: #f1eeff;
+}
+
+html[data-theme="light"] .proof-avatars span {
+  border-color: #fff;
+}
+
+html[data-theme="light"] .step-file,
+html[data-theme="light"] .ai-status,
+html[data-theme="light"] .mock-main,
+html[data-theme="light"] .payout-form input,
+html[data-theme="light"] .payout-form select,
+html[data-theme="light"] .referral-link-box,
+html[data-theme="light"] .editable-table th,
+html[data-theme="light"] .editable-table td {
+  color: #13192a;
+  background: #fff;
+}
+
+html[data-theme="light"] .mock-sidebar {
+  background: #151a2c;
+}
+
+html[data-theme="light"] .referral-link-box {
+  background: #f7f6fc;
+  border-color: #eceaf8;
+}
+
+html[data-theme="light"] .referral-link-box code {
+  color: #555d72;
+}
+
+html[data-theme="light"] .file-type {
+  background: #fff0ee;
+  color: #d76a62;
+}
+
+html[data-theme="light"] .file-type.green {
+  background: #e9f8f1;
+  color: #31a87d;
+}
+
+html[data-theme="light"] .icon-button:hover,
+html[data-theme="light"] .side-link.active {
+  background: #f1efff;
+}
+
+html[data-theme="light"] .side-link {
+  color: #777e90;
+}
+
+html[data-theme="light"] .mock-nav.active {
+  background: #25223c;
+}
+
+html[data-theme="light"] .mock-user {
+  background: #e8e3ff;
+  color: #6854dc;
+}
+
+html[data-theme="light"] .mock-stats > div {
+  border-color: #eeeff4;
+}
+
+html[data-theme="light"] .mock-document {
+  border-color: #f0f1f5;
+}
+
+html[data-theme="light"] .mock-progress {
+  background: #eeedf8;
+}
+
+html[data-theme="light"] .upload-panel {
+  background: #fbfaff;
+  border-color: #d9d7ed;
+}
+
+html[data-theme="light"] .button-dark {
+  background: #171d30;
+}
+
+html[data-theme="light"] .notice.success {
+  background: #eaf8f1;
+  color: #228261;
+}
+
+html[data-theme="light"] .notice.error {
+  background: #fff0ef;
+  color: #b54c47;
+}
+
+html[data-theme="light"] .notice.info {
+  background: #f1efff;
+  color: #5d4cb9;
+}
+
+html[data-theme="light"] .table-status {
+  color: #228261;
+}
+
+html[data-theme="light"] .toast {
+  background: #20263a;
+}
+
+html[data-theme="light"] .toast.toast-error {
+  background: #a94343;
+}
+
+@media (max-width: 650px) {
+  .topbar-actions {
+    gap: 5px;
+  }
+
+  .theme-toggle {
+    padding: 9px;
+    font-size: 14px;
+  }
+
+  .theme-toggle span {
+    font-size: 0;
+  }
+}

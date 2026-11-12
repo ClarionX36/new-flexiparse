@@ -3,7 +3,7 @@ const { GoogleGenAI } = require('@google/genai');
 function getClient() {
   if (!process.env.GEMINI_API_KEY) {
     throw Object.assign(
-      new Error('Ekstraksi dokumen belum dikonfigurasi. Admin perlu mengisi GEMINI_API_KEY di cPanel.'),
+      new Error('Document extraction is not configured. The administrator must set GEMINI_API_KEY in cPanel.'),
       { status: 503, expose: true }
     );
   }

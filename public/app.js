@@ -1,6 +1,13 @@
 const state = { csrfToken: '', user: null, dashboard: null, currentTableId: null, currentResult: null, recaptchaSiteKey: '' };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+let initialTheme = 'dark';
+try {
+  initialTheme = localStorage.getItem('flexiparse-theme') || 'dark';
+} catch (error) {
+  console.warn('Could not read the saved theme preference.', error);
+}
+setTheme(initialTheme === 'light' ? 'light' : 'dark');
 
 async function api(url, options = {}) {
   const headers = { ...(options.headers || {}) };
@@ -9,10 +16,10 @@ async function api(url, options = {}) {
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Permintaan gagal.');
+    if (!response.ok) throw new Error(data.error || 'Request failed.');
     return data;
   }
-  if (!response.ok) throw new Error(await response.text() || 'Permintaan gagal.');
+  if (!response.ok) throw new Error(await response.text() || 'Request failed.');
   return response;
 }
 
@@ -40,7 +47,7 @@ function setView(name) {
   $$('.app-view').forEach((view) => view.classList.add('hidden'));
   $(`#${name}-view`)?.classList.remove('hidden');
   $$('.side-link[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
-  $('#dashboard-title').textContent = ({ overview: 'Ringkasan', tables: 'Tabel saya', referral: 'Referral' })[name] || 'Ringkasan';
+  $('#dashboard-title').textContent = ({ overview: 'Overview', tables: 'My tables', referral: 'Referrals' })[name] || 'Overview';
   if (name === 'tables') loadTables();
 }
 
@@ -51,7 +58,7 @@ async function loadTables() {
 
 function renderTableList(target, tables) {
   if (!tables.length) {
-    target.innerHTML = '<div class="empty-state"><span>▤</span><h3>Belum ada tabel</h3><p>Unggah dokumen pertama Anda untuk mulai mengekstrak data.</p></div>';
+    target.innerHTML = '<div class="empty-state"><span>▤</span><h3>No tables yet</h3><p>Upload your first document to start extracting data.</p></div>';
     return;
   }
   target.innerHTML = '';
@@ -66,24 +73,24 @@ function renderTableList(target, tables) {
     const name = document.createElement('b');
     name.textContent = table.title;
     const meta = document.createElement('small');
-    meta.textContent = `${table.originalFilename} · ${table.totalPages} halaman · ${new Date(table.createdAt).toLocaleDateString('id-ID')}`;
+    meta.textContent = `${table.originalFilename} · ${table.totalPages} pages · ${new Date(table.createdAt).toLocaleDateString('en-US')}`;
     detail.append(name, meta);
     const actions = document.createElement('div');
     actions.className = 'saved-actions';
     const open = document.createElement('button');
     open.className = 'button button-outline button-small';
-    open.textContent = 'Buka tabel';
+    open.textContent = 'Open table';
     open.addEventListener('click', () => openTable(table.id));
     const remove = document.createElement('button');
     remove.className = 'icon-button';
     remove.textContent = '×';
-    remove.setAttribute('aria-label', 'Hapus tabel');
+    remove.setAttribute('aria-label', 'Delete table');
     remove.addEventListener('click', async () => {
-      if (!window.confirm(`Hapus tabel "${table.title}"?`)) return;
+      if (!window.confirm(`Delete table "${table.title}"?`)) return;
       try {
         await api(`/api/tables/${table.id}`, { method: 'DELETE' });
         await refreshDashboard();
-        toast('Tabel berhasil dihapus.');
+        toast('Table deleted.');
       } catch (error) { toast(error.message, true); }
     });
     actions.append(open, remove);
@@ -105,12 +112,12 @@ async function refreshDashboard() {
     $('#avatar-fallback').classList.add('hidden');
   }
   const totalQuota = Number(user.monthlyQuota) + Number(user.addonQuota);
-  $('#quota-value').textContent = totalQuota.toLocaleString('id-ID');
-  $('#quota-note').textContent = `${Number(user.monthlyQuota).toLocaleString('id-ID')} bulanan · ${Number(user.addonQuota).toLocaleString('id-ID')} bonus`;
+  $('#quota-value').textContent = totalQuota.toLocaleString('en-US');
+  $('#quota-note').textContent = `${Number(user.monthlyQuota).toLocaleString('en-US')} monthly · ${Number(user.addonQuota).toLocaleString('en-US')} bonus`;
   const limit = data.plans[user.planTier]?.tables ?? 1;
   const unlimitedTables = limit === 'unlimited';
   $('#table-count').textContent = `${data.tableCount} / ${unlimitedTables ? '∞' : limit}`;
-  $('#table-note').textContent = 'tabel tersimpan di workspace';
+  $('#table-note').textContent = 'tables saved in your workspace';
   $('#plan-value').textContent = user.planTier[0].toUpperCase() + user.planTier.slice(1);
   $('#topup-panel').classList.toggle('hidden', !['starter', 'pro', 'scale'].includes(user.planTier));
   $('#quota-bar-fill').style.width = `${Math.min(100, totalQuota / (data.plans[user.planTier]?.pages || 5) * 100)}%`;
@@ -124,7 +131,7 @@ async function refreshDashboard() {
   renderTableList($('#all-tables'), tables.tables);
   if (data.payouts.length) {
     const latest = data.payouts[0];
-    if (latest.status === 'requested') showNotice('Permintaan payout Anda sedang diproses.', 'info');
+    if (latest.status === 'requested') showNotice('Your payout request is being processed.', 'info');
   }
 }
 
@@ -134,7 +141,7 @@ async function openTable(id) {
     state.currentTableId = id;
     state.currentResult = table.result;
     $('#editor-title').textContent = table.title;
-    $('#editor-meta').textContent = `${table.originalFilename} · ${table.totalPages} halaman`;
+    $('#editor-meta').textContent = `${table.originalFilename} · ${table.totalPages} pages`;
     renderEditableTable(table.result);
     $('#editor-modal').classList.remove('hidden');
   } catch (error) { toast(error.message, true); }
@@ -179,25 +186,25 @@ async function handleUpload(file) {
   if (!file) return;
   const body = new FormData();
   body.append('document', file);
-  showNotice(`Mengunggah ${file.name} ke antrean…`, 'info');
+  showNotice(`Uploading ${file.name} to the queue…`, 'info');
   try {
     const headers = {};
     if (state.recaptchaSiteKey) headers['x-recaptcha-token'] = await getRecaptchaToken('extract');
     const queued = await api('/api/extract', { method: 'POST', body, headers });
-    showNotice('Dokumen masuk antrean. Halaman akan diperbarui saat selesai diproses.', 'info');
+    showNotice('Your document is queued. This page will update when processing is complete.', 'info');
     let completedJob;
     for (let attempt = 0; attempt < 180; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 10000));
       const { job } = await api(`/api/extractions/${queued.id}`);
-      if (job.status === 'failed') throw new Error(job.errorMessage || 'Ekstraksi gagal.');
+      if (job.status === 'failed') throw new Error(job.errorMessage || 'Extraction failed.');
       if (job.status === 'completed') {
         completedJob = job;
         break;
       }
-      showNotice(job.status === 'processing' ? 'AI sedang mengekstrak data…' : 'Dokumen menunggu giliran di antrean…', 'info');
+      showNotice(job.status === 'processing' ? 'AI is extracting your data…' : 'Your document is waiting in the queue…', 'info');
     }
-    if (!completedJob) throw new Error('Pemrosesan belum selesai. Job tetap tersimpan; buka kembali workspace beberapa saat lagi.');
-    showNotice('Ekstraksi selesai. Periksa dan edit hasilnya di bawah.', 'success');
+    if (!completedJob) throw new Error('Processing is taking longer than expected. Your job is saved; check your workspace again shortly.');
+    showNotice('Extraction complete. Review and edit your results below.', 'success');
     await refreshDashboard();
     await openTable(completedJob.tableId);
   } catch (error) {
@@ -214,7 +221,7 @@ async function getRecaptchaToken(action) {
       const script = document.createElement('script');
       script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(state.recaptchaSiteKey)}`;
       script.onload = resolve;
-      script.onerror = () => reject(new Error('reCAPTCHA gagal dimuat.'));
+      script.onerror = () => reject(new Error('Could not load reCAPTCHA.'));
       document.head.append(script);
     });
   }
@@ -244,12 +251,12 @@ async function initApp() {
     $$('a[href="/auth/google"]').forEach((link) => { link.href = `/auth/google?ref=${encodeURIComponent(referralCode)}`; });
   }
   if (!me.authenticated) {
-    $('#account-actions').innerHTML = '<a class="button button-quiet" href="/auth/google">Masuk <span>↗</span></a>';
-    if (new URLSearchParams(location.search).has('login')) toast('Login tidak berhasil. Silakan coba lagi.', true);
+    $('#account-actions').innerHTML = '<a class="button button-quiet" href="/auth/google">Sign in <span>↗</span></a>';
+    if (new URLSearchParams(location.search).has('login')) toast('Sign-in failed. Please try again.', true);
     return;
   }
   state.user = me.user;
-  $('#account-actions').innerHTML = '<button class="button button-quiet" id="open-workspace">Buka workspace <span>→</span></button>';
+  $('#account-actions').innerHTML = '<button class="button button-quiet" id="open-workspace">Open workspace <span>→</span></button>';
   $('#open-workspace').addEventListener('click', () => { location.href = '/dashboard'; });
   if (location.pathname === '/dashboard') {
     $('.hero').classList.add('hidden');
@@ -257,8 +264,8 @@ async function initApp() {
     $('#app-shell').classList.remove('hidden');
     await refreshDashboard();
     const params = new URLSearchParams(location.search);
-    if (params.get('payment') === 'success') showNotice('Pembayaran diterima. Paket diperbarui setelah Lemon Squeezy mengonfirmasi transaksi.', 'info');
-    if (params.get('payment') === 'cancelled') showNotice('Pembayaran dibatalkan.', 'info');
+    if (params.get('payment') === 'success') showNotice('Payment received. Your plan will update after Lemon Squeezy confirms the transaction.', 'info');
+    if (params.get('payment') === 'cancelled') showNotice('Payment cancelled.', 'info');
   }
 }
 
@@ -300,19 +307,19 @@ $('#save-table')?.addEventListener('click', async () => {
       method: 'PUT', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ title: $('#editor-title').textContent, result: readEditableTable() })
     });
-    toast('Perubahan tabel tersimpan.');
+    toast('Table changes saved.');
   } catch (error) { toast(error.message, true); }
 });
 $('#export-csv')?.addEventListener('click', () => downloadExport('csv'));
 $('#export-xlsx')?.addEventListener('click', () => downloadExport('xlsx'));
 $('#copy-referral')?.addEventListener('click', async () => {
   await navigator.clipboard.writeText($('#referral-link').textContent);
-  toast('Link referral disalin.');
+  toast('Referral link copied.');
 });
 $$('input[name="reward"]').forEach((radio) => radio.addEventListener('change', async () => {
   try {
     await api('/api/referral-reward', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ choice: radio.value }) });
-    toast('Pilihan reward diperbarui.');
+    toast('Reward preference updated.');
   } catch (error) { toast(error.message, true); }
 }));
 $('#payout-form')?.addEventListener('submit', async (event) => {
@@ -320,12 +327,31 @@ $('#payout-form')?.addEventListener('submit', async (event) => {
   const form = new FormData(event.currentTarget);
   try {
     await api('/api/payouts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ method: form.get('method'), account: form.get('account') }) });
-    toast('Permintaan payout berhasil dikirim.');
+    toast('Payout request submitted.');
     await refreshDashboard();
   } catch (error) { toast(error.message, true); }
 });
 
 initApp().catch((error) => {
   console.error(error);
-  if (location.pathname === '/dashboard') showNotice(`Workspace gagal dimuat: ${error.message}`, 'error');
+  if (location.pathname === '/dashboard') showNotice(`Could not load workspace: ${error.message}`, 'error');
 });
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  $('meta[name="theme-color"]').content = theme === 'dark' ? '#0b1020' : '#ffffff';
+  try {
+    localStorage.setItem('flexiparse-theme', theme);
+  } catch (error) {
+    console.warn('Could not save theme preference.', error);
+  }
+  $$('.theme-toggle').forEach((button) => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    button.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+    button.innerHTML = theme === 'dark' ? '☀ <span>Light mode</span>' : '☾ <span>Dark mode</span>';
+  });
+}
+
+$$('.theme-toggle').forEach((button) => button.addEventListener('click', () => {
+  setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+}));

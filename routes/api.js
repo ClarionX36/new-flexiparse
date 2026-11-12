@@ -14,7 +14,7 @@ const extractionLimiter = rateLimit({
   limit: 8,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  message: { error: 'Batas ekstraksi tercapai. Silakan coba lagi dalam 15 menit.' }
+  message: { error: 'Extraction limit reached. Please try again in 15 minutes.' }
 });
 
 router.get('/me', (req, res) => {
@@ -50,20 +50,20 @@ router.post('/checkout', requireAuth, requireCsrf, async (req, res, next) => {
     let product;
     if (type === 'subscription' && ['starter', 'pro', 'scale'].includes(plan)) {
       if (req.user.subscription_status === 'active' && req.user.plan_tier !== 'free') {
-        return res.status(409).json({ error: 'Anda sudah memiliki paket berbayar aktif. Hubungi dukungan untuk mengubah paket agar tidak membuat langganan ganda.' });
+        return res.status(409).json({ error: 'You already have an active paid plan. Contact support to change your plan and avoid creating a duplicate subscription.' });
       }
       product = plan;
     } else if (type === 'topup' && [500, 1500].includes(Number(pages))) {
       if (!['starter', 'pro', 'scale'].includes(req.user.plan_tier) || req.user.subscription_status !== 'active') {
-        return res.status(403).json({ error: 'Top-up hanya tersedia untuk pelanggan berbayar aktif.' });
+        return res.status(403).json({ error: 'Top-ups are only available to active paid subscribers.' });
       }
       product = `topup${Number(pages)}`;
     } else {
-      return res.status(400).json({ error: 'Produk pembayaran tidak valid.' });
+      return res.status(400).json({ error: 'Invalid payment product.' });
     }
     const variantId = getVariantId(product);
     if (!variantId || getProductByVariantId(variantId) !== product) {
-      return res.status(503).json({ error: `Varian Lemon Squeezy untuk ${product} belum dikonfigurasi dengan unik.` });
+      return res.status(503).json({ error: `A unique Lemon Squeezy variant has not been configured for ${product}.` });
     }
     const url = await createCheckout({
       variantId,

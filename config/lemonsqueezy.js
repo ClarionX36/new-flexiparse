@@ -35,7 +35,7 @@ async function createCheckout({ variantId, email, name, userId, type, plan, page
   const storeId = process.env.LEMONSQUEEZY_STORE_ID;
   const appUrl = process.env.APP_URL;
   if (!apiKey || !storeId || !appUrl) {
-    throw Object.assign(new Error('Pembayaran Lemon Squeezy belum dikonfigurasi. Periksa API key, store ID, dan APP_URL.'), { status: 503 });
+    throw Object.assign(new Error('Lemon Squeezy payments are not configured. Check the API key, store ID, and APP_URL.'), { status: 503 });
   }
 
   const custom = { user_id: String(userId), product_type: type };
@@ -55,7 +55,7 @@ async function createCheckout({ variantId, email, name, userId, type, plan, page
         attributes: {
           test_mode: process.env.LEMONSQUEEZY_TEST_MODE === 'true',
           checkout_data: { email, name: name || undefined, custom },
-          checkout_options: { locale: 'id' },
+          checkout_options: { locale: 'en' },
           product_options: { redirect_url: `${appUrl}/dashboard?payment=success` }
         },
         relationships: {
@@ -70,7 +70,7 @@ async function createCheckout({ variantId, email, name, userId, type, plan, page
   if (!response.ok) {
     console.error('[FlexiParse] Lemon Squeezy checkout failed with status:', response.status);
     throw Object.assign(
-      new Error('Checkout Lemon Squeezy gagal dibuat. Periksa konfigurasi produk dan coba lagi.'),
+      new Error('Could not create the Lemon Squeezy checkout. Check the product configuration and try again.'),
       { status: 502 }
     );
   }
@@ -80,10 +80,10 @@ async function createCheckout({ variantId, email, name, userId, type, plan, page
   try {
     checkoutUrl = new URL(url);
   } catch (error) {
-    throw Object.assign(new Error('Lemon Squeezy mengembalikan tautan checkout yang tidak valid.'), { status: 502 });
+    throw Object.assign(new Error('Lemon Squeezy returned an invalid checkout URL.'), { status: 502 });
   }
   if (checkoutUrl.protocol !== 'https:' || checkoutUrl.username || checkoutUrl.password) {
-    throw Object.assign(new Error('Lemon Squeezy mengembalikan tautan checkout yang tidak aman.'), { status: 502 });
+    throw Object.assign(new Error('Lemon Squeezy returned an insecure checkout URL.'), { status: 502 });
   }
   return checkoutUrl.href;
 }
