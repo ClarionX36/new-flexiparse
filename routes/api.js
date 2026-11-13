@@ -34,6 +34,7 @@ router.get('/me', (req, res) => {
 });
 
 router.get('/dashboard', requireAuth, users.dashboard);
+router.get('/extractions', requireAuth, parse.listExtractions);
 router.get('/extractions/:id', requireAuth, parse.getExtractionStatus);
 router.get('/tables', requireAuth, parse.listTables);
 router.get('/tables/:id', requireAuth, parse.getTable);

@@ -42,22 +42,22 @@ async function processQueueItem(id) {
         [job.user_id]
       );
       const user = users[0];
-      if (!user) throw Object.assign(new Error('Akun tidak ditemukan.'), { status: 401 });
+      if (!user) throw Object.assign(new Error('Account not found.'), { status: 401 });
       const plan = user.subscription_status === 'active' ? user.plan_tier : 'free';
       const limits = planLimits[plan] || planLimits.free;
       const [tables] = await connection.execute('SELECT COUNT(*) AS count FROM parsed_tables WHERE user_id = ?', [job.user_id]);
       if (Number(tables[0].count) >= limits.tables) {
-        throw Object.assign(new Error(`Batas jumlah tabel paket ${plan} telah tercapai.`), { status: 403 });
+        throw Object.assign(new Error(`The ${plan} plan table limit has been reached.`), { status: 403 });
       }
 
       const monthly = Number(user.monthly_quota_remaining);
       const addon = Number(user.add_on_quota_remaining);
       if (monthly + addon < Number(job.total_pages)) {
-        throw Object.assign(new Error('Kuota halaman tidak lagi mencukupi untuk dokumen ini.'), { status: 403 });
+        throw Object.assign(new Error('There is not enough page quota for this document.'), { status: 403 });
       }
       const monthlyUsed = Math.min(monthly, Number(job.total_pages));
       const addonUsed = Number(job.total_pages) - monthlyUsed;
-      const title = String(parsed.title || 'Hasil ekstraksi').trim().slice(0, 255) || 'Hasil ekstraksi';
+      const title = String(parsed.title || 'Extraction results').trim().slice(0, 255) || 'Extraction results';
       const [saved] = await connection.execute(
         'INSERT INTO parsed_tables (user_id, title, original_filename, parsed_json, total_pages) VALUES (?, ?, ?, ?, ?)',
         [job.user_id, title, path.basename(job.original_filename).slice(0, 255), JSON.stringify(parsed), job.total_pages]
@@ -83,7 +83,7 @@ async function processQueueItem(id) {
     console.error(`[FlexiParse] Extraction job ${id} failed:`, error);
     const publicMessage = error.expose || (error.status && error.status < 500)
       ? error.message
-      : 'Dokumen gagal diproses. Periksa file atau coba lagi.';
+      : 'The document could not be processed. Check the file or try again.';
     await db.execute(
       "UPDATE extraction_queue SET status = 'failed', error_message = ? WHERE id = ? AND status = 'processing'",
       [publicMessage.slice(0, 1000), id]

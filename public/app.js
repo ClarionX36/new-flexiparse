@@ -1,4 +1,4 @@
-const state = { csrfToken: '', user: null, dashboard: null, currentTableId: null, currentResult: null, recaptchaSiteKey: '' };
+const state = { csrfToken: '', user: null, dashboard: null, currentTableId: null, currentResult: null, recaptchaSiteKey: '', historyLoading: false, historyTimer: null };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 let initialTheme = 'dark';
@@ -99,6 +99,75 @@ function renderTableList(target, tables) {
   });
 }
 
+async function loadExtractionHistory() {
+  if (state.historyLoading) return;
+  state.historyLoading = true;
+  try {
+    const { jobs } = await api('/api/extractions');
+    renderExtractionHistory($('#extraction-history'), jobs);
+  } finally {
+    state.historyLoading = false;
+  }
+}
+
+function renderExtractionHistory(target, jobs) {
+  if (!jobs.length) {
+    target.innerHTML = '<div class="empty-state"><span>▤</span><h3>No documents yet</h3><p>Uploaded documents and their processing status will appear here.</p></div>';
+    return;
+  }
+
+  const statusLabels = {
+    pending: 'Queued',
+    processing: 'Processing',
+    completed: 'Completed',
+    failed: 'Failed'
+  };
+  target.replaceChildren();
+  jobs.forEach((job) => {
+    const item = document.createElement('article');
+    item.className = 'saved-table extraction-job';
+
+    const fileType = document.createElement('span');
+    fileType.className = 'file-type';
+    fileType.textContent = job.mimeType === 'application/pdf' ? 'PDF' : 'IMG';
+
+    const detail = document.createElement('div');
+    detail.className = 'saved-detail extraction-job-detail';
+    const name = document.createElement('b');
+    name.textContent = job.originalFilename;
+    const meta = document.createElement('small');
+    const createdAt = new Date(job.createdAt);
+    const dateLabel = Number.isNaN(createdAt.getTime()) ? '' : createdAt.toLocaleString('en-US');
+    meta.textContent = `${job.totalPages} ${Number(job.totalPages) === 1 ? 'page' : 'pages'} · ${dateLabel}`;
+    detail.append(name, meta);
+
+    const status = document.createElement('span');
+    status.className = 'job-status';
+    const statusLabel = statusLabels[job.status];
+    if (statusLabel) status.classList.add(`job-status-${job.status}`);
+    status.textContent = statusLabel || 'Unknown';
+
+    item.append(fileType, detail, status);
+    if (job.status === 'failed' && job.errorMessage) {
+      const error = document.createElement('p');
+      error.className = 'extraction-job-error';
+      error.textContent = job.errorMessage;
+      item.append(error);
+    }
+    if (job.status === 'completed' && job.tableId) {
+      const actions = document.createElement('div');
+      actions.className = 'saved-actions';
+      const open = document.createElement('button');
+      open.className = 'button button-outline button-small';
+      open.textContent = 'View results';
+      open.addEventListener('click', () => openTable(job.tableId));
+      actions.append(open);
+      item.append(actions);
+    }
+    target.append(item);
+  });
+}
+
 async function refreshDashboard() {
   const data = await api('/api/dashboard');
   state.dashboard = data;
@@ -129,6 +198,7 @@ async function refreshDashboard() {
   const tables = await api('/api/tables');
   renderTableList($('#recent-tables'), tables.tables.slice(0, 5));
   renderTableList($('#all-tables'), tables.tables);
+  await loadExtractionHistory();
   if (data.payouts.length) {
     const latest = data.payouts[0];
     if (latest.status === 'requested') showNotice('Your payout request is being processed.', 'info');
@@ -191,6 +261,7 @@ async function handleUpload(file) {
     const headers = {};
     if (state.recaptchaSiteKey) headers['x-recaptcha-token'] = await getRecaptchaToken('extract');
     const queued = await api('/api/extract', { method: 'POST', body, headers });
+    await loadExtractionHistory();
     showNotice('Your document is queued. This page will update when processing is complete.', 'info');
     let completedJob;
     for (let attempt = 0; attempt < 180; attempt += 1) {
@@ -263,6 +334,13 @@ async function initApp() {
     $$('.trust-strip, .how-section, .workspace-preview, .pricing, .bottom-cta, footer').forEach((node) => node.classList.add('hidden'));
     $('#app-shell').classList.remove('hidden');
     await refreshDashboard();
+    state.historyTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadExtractionHistory().catch((error) => {
+          console.error('Could not refresh document history:', error);
+        });
+      }
+    }, 15000);
     const params = new URLSearchParams(location.search);
     if (params.get('payment') === 'success') showNotice('Payment received. Your plan will update after Lemon Squeezy confirms the transaction.', 'info');
     if (params.get('payment') === 'cancelled') showNotice('Payment cancelled.', 'info');
@@ -273,6 +351,9 @@ $('#choose-file-button')?.addEventListener('click', () => $('#document-file').cl
 $('#choose-file-button-secondary')?.addEventListener('click', () => $('#document-file').click());
 $('#choose-file-button-tables')?.addEventListener('click', () => $('#document-file').click());
 $('#document-file')?.addEventListener('change', (event) => handleUpload(event.target.files[0]));
+$('#refresh-extractions')?.addEventListener('click', () => {
+  loadExtractionHistory().catch((error) => toast(error.message, true));
+});
 $$('.side-link[data-view]').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
 $$('[data-view="tables"]').forEach((button) => button.addEventListener('click', () => setView('tables')));
 $$('[data-scroll-plans]').forEach((button) => button.addEventListener('click', () => { location.href = '/#plans'; }));

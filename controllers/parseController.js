@@ -109,6 +109,24 @@ async function getExtractionStatus(req, res, next) {
   }
 }
 
+async function listExtractions(req, res, next) {
+  try {
+    const [jobs] = await db.execute(
+      `SELECT id, original_filename AS originalFilename, mime_type AS mimeType, total_pages AS totalPages,
+              status, error_message AS errorMessage, parsed_table_id AS tableId,
+              created_at AS createdAt, updated_at AS updatedAt
+       FROM extraction_queue
+       WHERE user_id = ?
+       ORDER BY created_at DESC, id DESC
+       LIMIT 100`,
+      [req.user.id]
+    );
+    return res.json({ jobs });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function listTables(req, res, next) {
   try {
     const [tables] = await db.execute(
@@ -190,4 +208,4 @@ async function exportTable(req, res, next) {
   }
 }
 
-module.exports = { uploadAndExtract, getExtractionStatus, listTables, getTable, updateTable, deleteTable, exportTable, planLimits };
+module.exports = { uploadAndExtract, getExtractionStatus, listExtractions, listTables, getTable, updateTable, deleteTable, exportTable, planLimits };
